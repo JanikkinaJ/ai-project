@@ -3,48 +3,93 @@ const COLUMN_A: usize = 0;
 const ROW_B: i8 = 6;
 const COLUMN_B: usize = 2;
 
-
-fn initialize_board(size: usize) -> Vec<Option<i8>> {
-    let mut board: Vec<Option<i8>> = vec![None::<i8>; size]; // The board, None indicates no queens placed in the row.
-
-    // assign coords
-    board[COLUMN_A] = Some(ROW_A); // (0,4)
-    board[COLUMN_B] = Some(ROW_B); // (2,6)
-    board
+#[derive(Debug)]
+struct Board {
+    size: usize,
+    board: Vec<Option<i8>>, // Each column points to a row (None if no queen is present)
 }
 
-fn check_column(board: &Vec<Option<i8>>, column :i8) -> bool {
-  !board.contains(&Some(column))
-}
+impl Board {
+    // Constructor to initialize the board
+    fn new(size: usize) -> Self {
+        Self {
+            size,
+            board: vec![None; size],
+        }
+    }
 
-// get diagonal condition
-fn check_diagonal(board: &Vec<Option<i8>>, queen1: usize, queen2: usize) -> Result<bool, String> {
-    // check that both queens exist
-    match (board[queen1], board[queen2]) {
-        (Some(row1), Some(row2)) => {
-            // q1 row - q2 row                            q1 col - q2 col
-            let col_diff = ((queen1 - queen2) as i8).abs();
-            let row_diff = ((row1 - row2) as i8).abs();
-            return Ok(row_diff == col_diff);
+    // Getter for a specific column
+    fn get(&self, column: usize) -> Result<i8, String> {
+        if column < self.size {
+            match self.board[column] {
+                Some(row) => Ok(row), // If a queen exists, return the row
+                None => Err(format!("No queen at column {}", column)), // If no queen is found, return an error
+            }
+        } else {
+            Err(format!(
+                "Invalid position: column={} exceeds board size {}.",
+                column, self.size
+            ))
         }
-        _ => {
-            return Err("One of the queens used for comparison doesn't exist: queen1:{queen1}, queen2 {queen2}".to_string());
+    }
+
+    // Setter to place a queen at a specific column and row
+    fn set(&mut self, column: usize, row: i8) -> Result<(), String> {
+        if self.check_valid(column, row) {
+            self.board[column] = Some(row);
+            return Ok(())
+        } else {
+            return Err(format!("Invalid position: column={}, row={}. Board size is {}.",column, row, self.size))
         }
+    }
+
+    // uses all checks to check if coordinate is valid
+    fn check_valid(&self, column :usize,row: i8) -> bool{
+        let check1 = self.check_column(column as i8);
+        let check2 = column <= self.size && row > 0 && row <= self.size as i8;
+        // also check diagonal
+        check1 && check2
+    }
+    
+    // Check if a column is safe (no queens on the same row)
+    fn check_column(&self, column :i8) -> bool {
+        !self.board.contains(&Some(column))
+    }
+
+    // get diagonal condition
+    fn check_diagonal(&self, queen1: usize, queen2: usize) -> Result<bool, String> {
+        // check that both queens exist
+        let row1 = self.get(queen1)?;
+        let row2 = self.get(queen2)?;
+        // Calculate differences
+        let col_diff = (queen1 as i8 - queen2 as i8).abs();
+        let row_diff = (row1 - row2).abs();
+
+        Ok(row_diff == col_diff) // Return whether the 2 queens are diagonally aligned 
     }
 }
 
 fn main() -> Result<(), String> {
     let size = 8;
-    let board = initialize_board(size);
-    match check_diagonal(&board, COLUMN_A, COLUMN_B)? {
+    let mut board = Board::new(size);
+
+    // Place queens on the board
+    board.set(COLUMN_A, ROW_A)?;
+    board.set(COLUMN_B, ROW_B)?;
+
+    // Check if queens are on the same diagonal
+    match board.check_diagonal(COLUMN_A, COLUMN_B)? {
         true => println!(
             "~Result: {COLUMN_A:?}:{:?} matches {COLUMN_B:?}:{:?}, it does.~",
-            &board[COLUMN_A], &board[COLUMN_B]
+            board.get(COLUMN_A),
+            board.get(COLUMN_B)
         ),
         false => println!(
             "~Result: {COLUMN_A:?}:{:?} matches {COLUMN_B:?}:{:?}, it doesn't.~",
-            &board[COLUMN_A], &board[COLUMN_B]
+            board.get(COLUMN_A),
+            board.get(COLUMN_B)
         ),
     }
-    return Ok(());
+
+    Ok(())
 }
