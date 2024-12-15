@@ -22,13 +22,17 @@ impl Board {
     }
 
 
-    fn print_queens(&self) {
+    fn get_queens(&self) -> String {
         let queens: Vec<String> = self
             .iter_queens() // Iterate through all placed queens
             .map(|(row, col)| format!("{{{}, {}}}", row, col)) // Format each as "{column, row}"
             .collect(); // Collect into a vector of strings
+        
+        format!("Queens: [{}]", queens.join(", "))
+    }
 
-        println!("Queens: [{}]", queens.join(", "));
+    fn print_queens(&self) {
+        println!("{}", self.get_queens());
     }
     
     fn print_board_grid(&self) {
@@ -71,7 +75,7 @@ impl Board {
 
     // uses all checks to check if coordinate is valid
     fn check_valid(&self, row :usize,column: i8) -> bool {
-        if !(self.check_column(row as i8)) {
+        if !(self.check_column(column)) {
             println!("Column conflict: {row}:{column}");
                 return false;
         } else if !(row < self.size && column >= 0 && column < self.size as i8) {
@@ -84,19 +88,19 @@ impl Board {
         return true;
     }
 
-    // Check if a column is safe (no queens on the same column) and report conflicts
     fn check_column(&self, column: i8) -> bool {
-        if let Some((col, row)) = self
-            .board
-            .iter()
-            .enumerate() // Include column indices
-            .find(|&(_, &row)| row == Some(column))
-        {
-            println!("Conflict detected with column: {column}: Queen already in column {col} at row {row:?}");
+    for (row_id, &col) in self.board.iter().enumerate() {
+        if col == Some(column) {
+            println!(
+                "Conflict detected with column: {column}: \
+                 Queen already in column {column} at row {row:?}",
+                row = row_id
+            );
             return false;
         }
-        return true; // No conflicts found
     }
+    true // No conflicts found
+}
 
     // returns true if diagonal is fine
     fn check_diagonal(&self, row_one: usize, col_one: i8, row_two: usize, col_two: i8) -> bool {
@@ -190,5 +194,35 @@ mod tests {
         assert_eq!(too_small, false);
         assert_eq!(way_too_small, false);
     }
-
+    #[test]
+    fn output_test() {
+        let mut board =  Board::new(8);
+        board.set(0, 0);
+        let mut queens = board.get_queens();
+        assert_eq!(queens,"Queens: [{0, 0}]");
+        board.set(1, 4);
+        queens = board.get_queens();
+        assert_eq!(queens,"Queens: [{0, 0}, {1, 4}]");
+        board.set(2, 7);
+        board.set(3, 5);
+        queens = board.get_queens();
+        assert_eq!(queens,"Queens: [{0, 0}, {1, 4}, {2, 7}, {3, 5}]");
+        board.set(4, 2);
+        board.set(5, 6);
+        queens = board.get_queens();
+        assert_eq!(queens,"Queens: [{0, 0}, {1, 4}, {2, 7}, {3, 5}, {4, 2}, {5, 6}]");
+        board.set(6, 1);
+        board.set(7, 3);
+        queens = board.get_queens();
+        assert_eq!(queens,"Queens: [{0, 0}, {1, 4}, {2, 7}, {3, 5}, {4, 2}, {5, 6}, {6, 1}, {7, 3}]");
+        println!("Test getter:");
+        assert_eq!(board.get(0), Some(0));
+        assert_eq!(board.get(1), Some(4));
+        assert_eq!(board.get(2), Some(7));
+        assert_eq!(board.get(3), Some(5));
+        assert_eq!(board.get(4), Some(2));
+        assert_eq!(board.get(5), Some(6));
+        assert_eq!(board.get(6), Some(1));
+        assert_eq!(board.get(7), Some(3));
+    }
 }
