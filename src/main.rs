@@ -61,6 +61,7 @@ impl Board {
     fn set(&mut self, row: usize, column: i8) -> bool {
         if self.check_valid(row, column) {
             self.board[row] = Some(column);
+            println!("Creating Queen at ({row},{column})");
             return true;
         } else {
             println!("Invalid position: column={}, row={}. Board size is {}.",column, row, self.size);
@@ -102,7 +103,7 @@ impl Board {
         // Calculate differences
         let col_diff = (col_one - col_two).abs();
         let row_diff = (row_one as i8 - row_two as i8).abs();
-        println!("row and col diff: {row_diff} == {col_diff}");
+        //println!("row and col diff: {row_diff} == {col_diff}");
         !(row_diff == col_diff) // Return whether the diagonal placement is valid
     }
 
@@ -116,11 +117,11 @@ impl Board {
                         return false;
                     }
                 },
-                _ => println!("queen {q_row} doesn't exist yet")
+                _ => print!("")
 
             }
         }
-        println!("queens not aligned diagonally");
+        //println!("queens not aligned diagonally");
         return true;
     }
 }
@@ -169,4 +170,25 @@ mod tests {
         assert_eq!(board.check_column(2),false);   
         assert_eq!(board.check_column(3),true);
     }
+    #[test]
+    fn too_big() {
+        let board =  Board::new(8);
+        let too_big = board.check_valid(0, 8);
+        let other_too_big = board.check_valid(8, 0);
+        let way_too_big = board.check_valid(8, 8);
+        let okay_size = board.check_valid(0, 0);
+        assert_eq!(too_big, false);
+        assert_eq!(other_too_big, false);
+        assert_eq!(way_too_big, false);
+        assert_eq!(okay_size,true);
+    }
+    #[test]
+    fn too_small() {
+        let board =  Board::new(8);
+        let too_small = board.check_valid(0, -1);
+        let way_too_small = board.check_valid(0, -90);
+        assert_eq!(too_small, false);
+        assert_eq!(way_too_small, false);
+    }
+
 }
