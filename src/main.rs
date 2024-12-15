@@ -18,14 +18,14 @@ impl Board {
         self.board
             .iter() // Iterate over the board vector
             .enumerate() // Add column indices to the iterator
-            .filter_map(|(col, row)| row.map(|r| (col, r))) // Filter `None` and map `Some(row)` to `(col, row)`
+            .filter_map(|(row, col)| col.map(|c| (row, c))) // Filter `None` and map `Some(col)` to `(col, row)`
     }
 
 
     fn print_queens(&self) {
         let queens: Vec<String> = self
             .iter_queens() // Iterate through all placed queens
-            .map(|(col, row)| format!("{{{}, {}}}", col, row)) // Format each as "{column, row}"
+            .map(|(row, col)| format!("{{{}, {}}}", row, col)) // Format each as "{column, row}"
             .collect(); // Collect into a vector of strings
 
         println!("Queens: [{}]", queens.join(", "));
@@ -58,9 +58,9 @@ impl Board {
     }
 
     // Setter to place a queen at a specific column and row
-    fn set(&mut self, column: usize, row: i8) -> bool {
-        if self.check_valid(column, row) {
-            self.board[column] = Some(row);
+    fn set(&mut self, row: usize, column: i8) -> bool {
+        if self.check_valid(row, column) {
+            self.board[row] = Some(column);
             return true;
         } else {
             println!("Invalid position: column={}, row={}. Board size is {}.",column, row, self.size);
@@ -69,15 +69,15 @@ impl Board {
     }
 
     // uses all checks to check if coordinate is valid
-    fn check_valid(&self, column :usize,row: i8) -> bool {
-        if !(self.check_column(column as i8)) {
-            println!("Column conflict: {column}:{row}");
+    fn check_valid(&self, row :usize,column: i8) -> bool {
+        if !(self.check_column(row as i8)) {
+            println!("Column conflict: {row}:{column}");
                 return false;
-        } else if !(column < self.size && row >= 0 && row < self.size as i8) {
-            println!("Size conflict: {column}:{row}");
+        } else if !(row < self.size && column >= 0 && column < self.size as i8) {
+            println!("Size conflict: {row}:{column}");
                 return false;
-        } else if !(self.check_all_diagonal(column)) {
-            println!("Diagonal conflict: {column}:{row}");
+        } else if !self.check_all_diagonal(row, column) {
+            println!("Diagonal conflict: {row}:{column}");
                 return false;
         } 
         return true;
@@ -97,33 +97,30 @@ impl Board {
         return true; // No conflicts found
     }
 
-    // get diagonal condition
-    // TODO change as currently it assumes both queens exist but this is used for checking potential queen
-    fn check_diagonal(&self, queen1: usize, queen2: usize) -> bool {
-        // check that both queens exist
-        match (self.get(queen1), self.get(queen2)) {
-            (Some(row1), Some(row2)) => {
-                // Calculate differences
-                let col_diff = (queen1 as i8 - queen2 as i8).abs();
-                let row_diff = (row1 - row2).abs();
-                println!("row and col diff: {row_diff} == {col_diff}");
-                row_diff == col_diff // Return whether the 2 queens are diagonally aligned
-            }
-            _ => {
-                println!("One or both queens do not exist at: queen1={queen1}, queen2={queen2}");
-                return false;
-            }
-        }
+    // returns true if diagonal is fine
+    fn check_diagonal(&self, row_one: usize, col_one: i8, row_two: usize, col_two: i8) -> bool {
+        // Calculate differences
+        let col_diff = (col_one - col_two).abs();
+        let row_diff = (row_one as i8 - row_two as i8).abs();
+        println!("row and col diff: {row_diff} == {col_diff}");
+        !(row_diff == col_diff) // Return whether the diagonal placement is valid
     }
 
-    fn check_all_diagonal(&self, queen1: usize) -> bool {
-        for col in 0..(self.size-1) {
-            if self.check_diagonal(queen1, col) {
-                println!("{queen1} and {col} aligned");
-                return false;
+    // returns true if all queen diagonals don't conflict with coord
+    fn check_all_diagonal(&self, row: usize, col: i8) -> bool {
+        for q_row in 0..(self.size-1) {
+            match self.get(q_row) {
+                Some(q_col) => { 
+                    if !self.check_diagonal(row, col, q_row, q_col) {
+                        println!("{q_row} and {row} aligned");
+                        return false;
+                    }
+                },
+                _ => println!("queen {q_row} doesn't exist yet")
+
             }
         }
-        println!("{queen1} not aligned diagonally");
+        println!("queens not aligned diagonally");
         return true;
     }
 }
@@ -132,17 +129,44 @@ fn main() -> Result<(), String> {
     let size = 8;
     let mut board = Board::new(size);
 
-    let COLUMN_A: usize = 0;
-    let ROW_A: i8 = 0;
-    let COLUMN_B: usize = 1;
-    let ROW_B: i8 = 1;
+    let row_a: usize = 0;
+    let col_a: i8 = 0;
+    let row_b: usize = 2;
+    let col_b: i8 = 3;
 
     // Place queens on the board
-    board.set(COLUMN_A, ROW_A);
-    board.set(COLUMN_B, ROW_B);
+    board.set(row_a, col_a);
+    board.set(row_b, col_b);
 
     board.print_board_grid();
     board.print_queens();
     
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn create_queen() {
+        let mut board =  Board::new(8);
+        let create = board.set(0, 0);
+        assert_eq!(create, true);
+    }
+    #[test]
+    fn diagonal_found() {
+        let mut board =  Board::new(8);
+        board.set(0, 0);
+        let bad_coord = board.set(1, 1);
+        assert_eq!(bad_coord, false);
+        assert_eq!(board.check_diagonal(0,0, 1,1), false);
+    }
+    #[test]
+    fn conflicting_column_found() {
+        let mut board =  Board::new(8);
+        board.set(1, 2);
+        assert_eq!(board.check_column(1),true);
+        assert_eq!(board.check_column(2),false);   
+        assert_eq!(board.check_column(3),true);
+    }
 }
