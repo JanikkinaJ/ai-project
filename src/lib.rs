@@ -19,17 +19,11 @@ impl Board {
     }
 
     // Getter for a specific column
-    fn get(&self, column: usize) -> Result<i8, String> {
+    fn get(&self, column: usize) -> Option<i8> {
         if column < self.size {
-            match self.board[column] {
-                Some(row) => Ok(row), // If a queen exists, return the row
-                None => Err(format!("No queen at column {}", column)), // If no queen is found, return an error
-            }
+            self.board[column]
         } else {
-            Err(format!(
-                "Invalid position: column={} exceeds board size {}.",
-                column, self.size
-            ))
+            None
         }
     }
 
@@ -47,7 +41,7 @@ impl Board {
     fn check_valid(&self, column :usize,row: i8) -> bool{
         let check1 = self.check_column(column as i8);
         let check2 = column <= self.size && row > 0 && row <= self.size as i8;
-        // also check diagonal
+        // TODO also check all diagonal
         check1 && check2
     }
     
@@ -59,13 +53,26 @@ impl Board {
     // get diagonal condition
     fn check_diagonal(&self, queen1: usize, queen2: usize) -> Result<bool, String> {
         // check that both queens exist
-        let row1 = self.get(queen1)?;
-        let row2 = self.get(queen2)?;
-        // Calculate differences
-        let col_diff = (queen1 as i8 - queen2 as i8).abs();
-        let row_diff = (row1 - row2).abs();
+        match (self.get(queen1), self.get(queen2)) {
+            (Some(row1), Some(row2)) => {
+                // Calculate differences
+                let col_diff = (queen1 as i8 - queen2 as i8).abs();
+                let row_diff = (row1 - row2).abs();
+                Ok(row_diff == col_diff) // Return whether the 2 queens are diagonally aligned 
+            }
+            _ => Err(format!("One or both queens do not exist at: queen1={queen1}, queen2={queen2}",)),
+        }
+    }
 
-        Ok(row_diff == col_diff) // Return whether the 2 queens are diagonally aligned 
+    fn check_all_diagonal(&self, queen1: usize) -> Result<bool, String> {
+        for col in 0..(self.size-1) {
+            if self.get(queen1) != None {
+                if self.check_diagonal(queen1, col)? {
+                    return Ok(false);
+                }
+            }
+        }
+        Ok(true)
     }
 }
 
