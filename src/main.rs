@@ -13,18 +13,18 @@ impl Board {
         }
     }
 
-/// Get state of all queens via a string
-fn get_queens(&self) -> String {
-    let queens: Vec<String> = self
-        .board
-        .iter()
-        // Get (row, Option<column>) for each row
-        .enumerate() 
-        // Map to formatted string if column exists
-        .filter_map(|(row, &col)| col.map(|c| format!("{{{}, {}}}", row, c))) 
-        .collect(); 
-    format!("Queens: [{}]", queens.join(", "))
-}
+    /// Get state of all queens via a string
+    fn get_queens(&self) -> String {
+        let queens: Vec<String> = self
+            .board
+            .iter()
+            // Get (row, Option<column>) for each row
+            .enumerate()
+            // Map to formatted string if column exists
+            .filter_map(|(row, &col)| col.map(|c| format!("{{{}, {}}}", row, c)))
+            .collect();
+        format!("Queens: [{}]", queens.join(", "))
+    }
 
     /// print queens state to terminal
     fn print_queens(&self) {
