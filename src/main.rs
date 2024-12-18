@@ -119,22 +119,17 @@ fn get_queens(&self) -> String {
     /// returns true if all queen diagonals don't conflict with coord
     fn check_all_diagonal(&self, row: usize, col: i8) -> bool {
         for q_row in 0..(self.size-1) {
-            match self.get(q_row) {
-                Some(q_col) => {
-                    if !self.check_diagonal(row, col, q_row, q_col) {
-                        // println!("{q_row}:{q_col} and {row}:{col} aligned");
-                        return false;
-                    }
-                },
-                _ => print!("")
-
+            if let Some(q_col) = self.get(q_row) {//handles the case where q_col is None
+                if !self.check_diagonal(row, col, q_row, q_col) {
+                    return false;
+                }
             }
         }
-        //println!("queens not aligned diagonally");
         return true;
     }
 
 }
+
 /// the backtrack solution for queen 8x8 problem
 fn backtrack(board: &mut Board, row: usize, solutions: &mut Vec<String>) -> i32 {
     if row == board.size {
