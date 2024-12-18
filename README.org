@@ -1,0 +1,459 @@
+:PROPERTIES:
+:ID:       e9425c64-42bd-4904-8f34-55cfd5884df1
+:END:
+#+title: Ai projekt
+** Tags:                                                       :leibniz:
+
+* AI project - Solve 8 queens problem 8x8
+** Structured
+*** Requirements
+**** Bewertungskriterien
+Um Ihnen ein besseres Gefühl für den Erwartungshorizont zu geben einmal die Themen, die Sie für die Präsentation/Projekt in EAI im Kopf haben sollten:
+***** Präsentation:
+****** Korrekte wissenschaftliche Vorgehensweise
+(Quellenangaben zu den wichtigsten Stellen, Grundlegend verwendete Literatur aufgezeigt, Wenn Einsatz KI: Zitiert)
+****** Überblick Thema
+(Angemessener Überblick über das Thema [und seine Teildisziplinen])
+Inhaltliche Tiefe
+(Komplexität und inhaltlicher Umfang der Inhalte angemessen)
+****** Roter Faden
+(Inhalte aufeinander aufbauend und zusammenhängend, Konzepte erklärt, Struktur erkennbar)
+*****  Projekt:
+****** Korrekte wissenschaftliche Vorgehensweise
+(Grundlegend verwendete Literatur aufgezeigt, Wenn Einsatz KI: Zitiert)
+****** Überblick Problemstellung & Beantwortung Fragen
+(Grundlegender Überblick über Problemstellung und Vorgehensweise, beantwortung vorher festgelegter Fragen)
+Dokumentation
+(Wichtigste Stellen kommentiert, Code/Lösungsstrategie nachvollziehbar[roter Faden], Klassendiagramm oder Programmablaufplan vorhanden)
+****** Code
+(Das Programm funktioniert und löst das definierte Problem, Bugs (falls vorhanden aufgezeigt)
+Viel Erfolg in der Prüfungsphase & denken Sie daran, dass Sie nur bis zum 20.12 abgeben können!
+
+**** Specific questions
+- Verwenden eines CSPs
+  - Column constraint: Each queen is placed in a unique column, meaning no two queens can share the same column.
+  - Row constraint: Similarly, each queen is placed in a unique row. In most CSP formulations of the 8-queens problem, this is implicitly satisfied by assigning each queen to a specific row.
+  - Diagonal constraints: No two queens can be on the same diagonal. This means that for any two queens at positions $(r_1, c_1)$ and $(r_2, c_2)$
+    - They cannot satisfy $r_2 - r_1 = c_2 - c_1$ (same "positive slope" diagonal).
+    - They cannot satisfy $r_2 - r_1 = -(c_2 - c_1)$ (same "negative slope" diagonal).
+- Wie wird das CSP modelliert
+  - A set of variables $\{x_1, x_2, x_3,...,x_2\}$
+    - Variables: $\{Q_i | 1\leq i \leq 8\}$
+  - for each variable $x_i$ there is a domain $D_i$ of values that can be assigned to $x_i$
+    - for each $i \{1 - 8\}$
+  - a set of constraints $\{c_1,c_2,c_3,...,c_n\}$
+    - $\{Q_i\neq Q_j \text{ if } i \neq j\} \rightarrow$ not the same row
+    - $\{\middle Q_i -Q_j\middle \neq \middle i-j \middle \text{ if } i \neq j\} \rightarrow$ not the same diagonal
+- Wie wird ein State modelliert
+  - Der State beschreibt, welche Werte den Variablen zugewiesen wurden.
+  - Beispielsweise: $Q_1 = 1, Q_2 = 3$ bedeutet, dass die erste Dame in der ersten Zeile, erste Spalte, und die zweite Dame in der zweiten Zeile, dritte Spalte steht.
+  - sonst auch ~state space tree~
+- was gibt das Programm im Erfolgs/Fehlerfall aus
+- welche heuristische funktionen werden verwendet?
+  - Minimum Remaining Values(MRV):
+    - Use the variable with the least amount of values left
+  - Most constraining variable(MCV)
+    - Which variable is used in the most amount of constraints
+  - Least constraining value(LCV)
+    - Prioritize the value selection based on their accumalated effect on all domains
+#+DOWNLOADED: screenshot @ 2024-12-18 13:51:05
+[[file:../images/AI_project_-_Solve_8_queens_problem_8x8/2024-12-18_13-51-05_screenshot.png]]
+
+*** Implementation
+#+SETUPFILE: ~/Sync/setup.org
+#+LATEX_HEADER: \usepackage{fancyhdr}
+#+LATEX_HEADER: \pagestyle{fancy}
+#+LATEX_HEADER: \lhead{Rust 8 Queen Problem}
+#+LATEX_HEADER: \rhead{page \thepage}
+#+LATEX_HEADER: \cfoot{By: Janik kinaj}
+#+LATEX_HEADER: \renewcommand{\headrulewidth}{0.4pt}
+#+LATEX_HEADER: \renewcommand{\footrulewidth}{0.4pt}
+#+LATEX_HEADER: \usepackage{titlesec}
+#+latex_header: \definecolor{darkblue} {HTML}{0000CC}
+#+LATEX_HEADER: \titleformat*{\section}{\Huge\bfseries\color{darkblue}}
+#+LATEX_HEADER: \titleformat*{\subsection}{\LARGE\bfseries\color{darkblue}}
+#+LATEX_HEADER: \titleformat*{\subsubsection}{\large\bfseries\color{darkblue}}
+#+LATEX_HEADER: \thispagestyle{empty}
+#+LATEX: \newpage
+**** Planning
+The plan is to create an algorithm that solves the 8x8 queen problem in a reasonable time.
+To solve in this case means to output all possible valid solutions. To create a better algorithm there are certain design decisions that have been made.
+
+***** links
+- [[https://www.geeksforgeeks.org/constraint-satisfaction-problems-csp-in-artificial-intelligence/][geeksforgeeks explanation]]
+- [[https://en.wikipedia.org/wiki/Constraint_satisfaction_problem][csp wiki eng]]
+- [[https://de.wikipedia.org/wiki/Constraint-Satisfaction-Problem][csp wiki deutsch]]
+- [[https://www.user.tu-berlin.de/mtoussai/teaching/19-ArtificialIntelligence/08-CSP.pdf][tu-berlin pdf]]
+- [[https://medium.com/@davidlfliang/intro-python-algorithms-eight-queens-problem-fdcc5cf384d5][medium 8x8]]
+- [cite:@martinjak2007comparisonheuristicalgorithms]
+**** Structure
+#+begin_box
+The actual structure consists of the size saved as an int and a board saved as a vector of ~N~ length. Each Index of the vector represents a row and the value the column that a queen of that row sits on. The vector has a ~value~ or ~None~ at each point representing the column that that queen is in or that no queen has been placed there yet.
+#+end_box
+
+#+BEGIN_SRC mermaid :file board_class_diagram.png :exports both
+classDiagram
+    class Board {
+        + usize size
+        + Vec<Option<i8>> board
+        + new(size: usize) Board
+        + get(row: usize) Option<i8>
+        + set(row: usize, column: i8) bool
+        + unset(row: usize, column: i8) bool
+        + check_column(column: i8) bool
+        + check_diagonal(row1: usize, col1: i8, row2: usize, col2: i8) bool
+        + check_all_diagonal(row: usize, col: i8) bool
+        + check_valid(row: usize, column: i8) bool
+        + get_queens() String
+        + print_queens()
+        + print_board_grid()
+    }
+#+END_SRC
+
+#+RESULTS:
+[[file:board_class_diagram.png]]
+
+#+begin_src rust :noweb-ref struct_board 
+  #[derive(Debug)]
+  struct Board {
+      size: usize,
+      board: Vec<Option<i8>>, // Each row points to a column (None if no queen is present)
+  }
+#+end_src
+
+#+begin_src rust :noweb-ref impl_board
+  impl Board {
+      /// Constructor to initialize the board
+      fn new(size: usize) -> Self {
+          Self {
+              size,
+              board: vec![None; size],
+          }
+      }
+#+end_src
+#+LATEX: \newpage
+**** getter 
+#+begin_box
+the getter used to retrieve the column value of a queen after providing the queens row
+#+end_box
+#+begin_src rust :noweb-ref get
+  /// Getter for column of queen in provided row
+  fn get(&self, row: usize) -> Option<i8> {
+      if row < self.size  {
+          self.board[row]
+      } else {
+          None
+      }
+  }
+#+end_src
+
+**** check validity
+***** row constraint
+By assigning a specific queen to a specific row we reduce the amount of possibilities and also make the solution adhere to the row constraint.
+This has already been ensured by our model for queens getting their row via their placement in the Vector.
+***** Diagonal constraint
+It needs to be checked whether queens are diagonal from one another. This is a possible implementation.
+#+begin_box
+given a coord use diagonal function to check that no other queens are on the diagonal
+#+end_box
+#+begin_src rust :noweb-ref check_all_daigonal
+  /// returns true if all queen diagonals don't conflict with coord
+  fn check_all_diagonal(&self, row: usize, col: i8) -> bool {
+      for q_row in 0..(self.size-1) {
+          if let Some(q_col) = self.get(q_row) {//handles the case where q_col is None
+              // Calculate differences
+              let col_diff = (col - q_col).abs();
+              let row_diff = (row as i8 - q_row as i8).abs();
+              !(row_diff == col_diff) // Return whether the diagonal placement is valid          }
+      }
+      return true;
+  }
+  #+end_src
+***** Check constraints 
+As two queens on the same column would cause them to attack eachother this is a constraint we add.
+We check this constraint by checking whether another queen already has the same column before assigning.
+#+begin_box
+combines all above checks into one function for ease of use and additionally checks that given column doesn't conflict with any other queens.
+#+end_box
+
+#+begin_src rust :noweb-ref check_valid
+  /// uses all checks to check if coordinate is valid
+  fn check_valid(&self, row :usize,column: i8) -> bool {
+      if self.board.iter().any(|&col| col == Some(column)) {
+              return false;
+      } else if !(row < self.size && column >= 0 && column < self.size as i8) {
+              return false;
+      } else if !self.check_all_diagonal(row, column) {
+              return false;
+      }
+      return true;
+  }
+#+end_src
+**** setters
+#+begin_box
+Set a queen, checking whether the position is a valid queen placement first
+#+end_box
+#+begin_src rust :noweb-ref set
+  
+  /// Setter to place a queen at a specific column and row
+  fn set(&mut self, row: usize, column: i8) -> bool {
+      if self.check_valid(row, column) {
+          self.board[row] = Some(column);
+          return true;
+      } else {
+          println!("Invalid Queen position: column={}, row={}. Board size is {}.",column, row, self.size);
+          return false;
+      }
+  }
+#+end_src
+
+#+begin_box
+Unset a queen, only checking whether the position exists on the board
+#+end_box
+#+begin_src rust :noweb-ref unset
+  /// unsetter to remove a queen at a specific column and row
+  fn unset(&mut self, row: usize, column: i8) -> bool {
+      if !(row < self.size && column >= 0 && column < self.size as i8) {
+          println!("Invalid position: row={}, column={}. Board size is {}.",row, column, self.size);
+          return false;
+      } else {
+          self.board[row] = None;
+          return true
+      }
+  }
+#+end_src
+
+**** printing state
+#+begin_box
+returns string with all queens nicely formatted
+#+end_box
+#+begin_src rust :noweb-ref get_queens
+  /// Get state of all queens via a string
+  fn get_queens(&self) -> String {
+      let queens: Vec<String> = self
+          .board
+          .iter()
+          .enumerate() // Get (row, Option<column>) for each row
+          // Map to formatted string if column exists
+          .filter_map(|(row, &col)| col.map(|c| format!("{{{}, {}}}", row, c)))
+          .collect();
+      format!("Queens: [{}]", queens.join(", "))
+  }
+#+end_src
+#+begin_box
+print the queens string
+#+end_box
+#+begin_src rust :noweb-ref print_queens
+  /// print queens state to terminal
+  fn print_queens(&self) {
+      println!("{}", self.get_queens());
+  }
+#+end_src
+
+#+begin_box
+prints a nice board layout with queens state
+#+end_box
+#+begin_src rust :noweb-ref print_board
+  /// nicer printing of current queen state
+  fn print_board_grid(&self) {
+      print!("===");
+      for i in 0..self.size {
+          print!("{i}==")
+      }
+      println!();
+      for col in 0..self.size {
+          print!("{col}|");
+          for row in 0..(self.size as i8) {
+              if let Some(queen_col) = self.get(col) {
+                  if queen_col == row {
+                      print!(" Q "); // Queen
+                  } else {
+                      print!(" . "); // Empty
+                  }
+              } else {
+                  print!(" . "); // Empty
+              }
+          }
+          println!("|"); // Newline after each row
+      }
+      for _i in 0..self.size {
+          print!("===")
+      }
+      println!("===");
+  }
+#+end_src
+
+**** the main backtrack function
+  #+begin_src rust :noweb-ref backtrack
+  /// the backtrack solution for queen 8x8 problem
+  fn backtrack(board: &mut Board, row: usize, solutions: &mut Vec<String>) -> i32 {
+      if row == board.size {
+          solutions.push(board.get_queens().to_string());
+          board.print_board_grid();
+          board.print_queens();
+         return 1
+      }
+      let mut count = 0;
+      for col in 0..board.size as i8  {
+          if board.check_valid(row, col) {
+              board.set(row, col);
+              count = count + backtrack(board, row + 1, solutions);
+              board.unset(row, col);
+          }
+      }
+      return count
+  }
+#+end_src
+
+#+begin_src rust :noweb-ref solve_n_queens
+  /// solve 8x8 queens
+  fn solve_n_queens(n: usize) -> i32 {
+      let mut board = Board::new(n);
+      let mut solutions: Vec<String> = Vec::new();
+      if n <= 10 {
+          let solution_count = backtrack(&mut board, 0, &mut solutions);
+          println!("Solved {n}x{n} Queens problem with {solution_count} solutions!");
+          return solution_count;
+      } else {
+          println!("Solving for larger than 10 ahsn't been implemented yet");
+          let solution_count = 0;
+          return solution_count;
+      }
+  }
+
+  fn main() -> Result<(), String> {
+      solve_n_queens(8);
+      Ok(())
+  }
+#+end_src
+**** testing
+#+begin_src rust :noweb-ref test_create_queen
+   #[test]
+  fn create_queen() {
+      let mut board =  Board::new(8);
+      let create = board.set(0, 0);
+      assert_eq!(create, true);
+  }
+#+end_src
+
+#+begin_src rust :noweb-ref test_diagonal_found
+  #[test]
+  fn diagonal_found() {
+      let mut board =  Board::new(8);
+      board.set(0, 0);
+      let bad_coord = board.set(1, 1);
+      assert_eq!(bad_coord, false);
+      assert_eq!(board.check_diagonal(0,0, 1,1), false);
+  }
+#+end_src
+
+#+begin_src rust :noweb-ref test_conflicting_column_found
+  #[test]
+  fn conflicting_column_found() {
+      let mut board =  Board::new(8);
+      board.set(1, 2);
+      assert_eq!(board.check_column(1),true);
+      assert_eq!(board.check_column(2),false);
+      assert_eq!(board.check_column(3),true);
+  }
+#+end_src
+
+#+begin_src rust :noweb-ref test_too_big
+  #[test]
+  fn too_big() {
+      let board =  Board::new(8);
+      let too_big = board.check_valid(0, 8);
+      let other_too_big = board.check_valid(8, 0);
+      let way_too_big = board.check_valid(8, 8);
+      let okay_size = board.check_valid(0, 0);
+      assert_eq!(too_big, false);
+      assert_eq!(other_too_big, false);
+      assert_eq!(way_too_big, false);
+      assert_eq!(okay_size,true);
+  }
+#+end_src
+
+#+begin_src rust :noweb-ref test_too_small
+  #[test]
+  fn too_small() {
+      let board =  Board::new(8);
+      let too_small = board.check_valid(0, -1);
+      let way_too_small = board.check_valid(0, -90);
+      assert_eq!(too_small, false);
+      assert_eq!(way_too_small, false);
+  }
+#+end_src
+
+#+begin_src rust :noweb-ref test_output
+  #[test]
+  fn output_test() {
+      let mut board =  Board::new(8);
+      board.set(0, 0);
+      let mut queens = board.get_queens();
+      assert_eq!(queens,"Queens: [{0, 0}]");
+      board.set(1, 4);
+      queens = board.get_queens();
+      assert_eq!(queens,"Queens: [{0, 0}, {1, 4}]");
+      board.set(2, 7);
+      board.set(3, 5);
+      queens = board.get_queens();
+      assert_eq!(queens,"Queens: [{0, 0}, {1, 4}, {2, 7}, {3, 5}]");
+      board.set(4, 2);
+      board.set(5, 6);
+      queens = board.get_queens();
+      assert_eq!(queens,"Queens: [{0, 0}, {1, 4}, {2, 7}, {3, 5}, {4, 2}, {5, 6}]");
+      board.set(6, 1);
+      board.set(7, 3);
+      queens = board.get_queens();
+      assert_eq!(queens,"Queens: [{0, 0}, {1, 4}, {2, 7}, {3, 5}, {4, 2}, {5, 6}, {6, 1}, {7, 3}]");
+      println!("Test getter:");
+      assert_eq!(board.get(0), Some(0));
+      assert_eq!(board.get(1), Some(4));
+      assert_eq!(board.get(2), Some(7));
+      assert_eq!(board.get(3), Some(5));
+      assert_eq!(board.get(4), Some(2));
+      assert_eq!(board.get(5), Some(6));
+      assert_eq!(board.get(6), Some(1));
+      assert_eq!(board.get(7), Some(3));
+  }
+#+end_src
+**** Tangle-Only Block: Final Code                              :noexport:
+#+begin_src rust :noweb yes :tangle ~/projects/leibniz/eight_queens/src/main.rs
+  <<struct_board>> 
+
+  <<impl_board>>
+
+  <<get>>
+
+  <<check_column>>
+
+  <<check_diagonal>>
+
+  <<check_all_daigonal>>
+
+  <<check_valid>>
+
+  <<set>>
+
+  <<unset>>
+
+  <<get_queens>>
+
+  <<print_queens>>
+
+  <<print_board>>
+
+  }
+  <<backtrack>>
+  <<solve_n_queens>>
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        <<test_create_queen>>
+            <<test_diagonal_found>>
+            <<test_conflicting_column_found>>
+            <<test_too_big>>
+            <<test_too_small>>
+            <<test_output>>
+    }
+#+end_src
