@@ -8,7 +8,8 @@
 #+LATEX_HEADER: \cfoot{By: Janik kinaj}
 #+LATEX: \newpage
 * Introduction
-** Running the Project with Cargo
+** Running code
+*** Running the Project with Cargo
 1. Navigate to the project directory:
 #+BEGIN_SRC bash :tangle no
    cd ai_project
@@ -20,6 +21,8 @@
 #+END_SRC
 This will compile and run the `src/main.rs` file.
 Subsequent calls will complete faster as no compilation needs to take place.
+*** Running the binary directly
+Otherwise go the [[https://github.com/JanikkinaJ/ai-project/releases][github releases]] and use one of the binaries present there that matches your operating system.
 ** Grundlegende problemstellung
 Das 8 Queen problem besteht aus einem 8x8 Schachbrett. Bei den queen Problemen ist die Grö\ss e des Boards nxn wenn die Anzahl der zu platzierende Queens n ist. Um das problem zu lösen muss man entweder eine oder alle mögliche lösungen finden. Eine lösung ist valide wenn 8 queens auf Board sind und keine der queens direct eine andere angreifen kann.
 In diesem fall werden alle mögliche Lösungen gesucht.
