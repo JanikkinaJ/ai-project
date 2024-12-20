@@ -129,35 +129,58 @@ impl Board {
 
 }
 
-/// the backtrack solution for queen 8x8 problem
-fn backtrack(board: &mut Board, row: usize) -> i32 {
-    if row == board.size {
-        board.print_board_grid();
-        board.print_queens();
-        return 1
-    }
-    let mut count = 0;
-    for col in 0..board.size as i8  {
-        if board.check_valid(row, col) {
-            board.set(row, col);
-            count = count + backtrack(board, row + 1);
-            board.unset(row, col);
-        }
-    }
-    return count
+struct Solver {
+    solution_count: i32,
 }
 
+
+impl Solver {
+    /// Constructor to initialize the solver
+    fn new() -> Self {
+        Self {
+            solution_count: 0,
+        }
+    }
+
+    fn get_solution_count(&self) -> i32 {
+        return self.solution_count;
+    }
+
+    fn iterate_solution_count(&mut self) {
+        self.solution_count += 1;
+    }
+
+    /// the backtrack solution for queen 8x8 problem
+    fn backtrack(&mut self, board: &mut Board, row: usize) {
+        if row == board.size {
+            board.print_board_grid();
+            board.print_queens();
+            self.iterate_solution_count();
+            return
+        }
+        for col in 0..board.size as i8  {
+            if board.check_valid(row, col) {
+                board.set(row, col);
+                self.backtrack(board, row + 1);
+                board.unset(row, col);
+            }
+        }
+        return
+    }
+}
+
+
 /// solve 8x8 queens
-fn solve_n_queens(n: usize) -> i32 {
+pub fn solve_n_queens(n: usize) -> i32 {
     let mut board = Board::new(n);
+    let mut solver = Solver::new();
     if n <= 10 {
-        let solution_count = backtrack(&mut board, 0);
-        println!("Solved {n}x{n} Queens problem with {solution_count} solutions!");
-        return solution_count;
+        solver.backtrack(&mut board, 0);
+        println!("Solved {n}x{n} Queens problem with {} solutions!", solver.get_solution_count());
+        return solver.get_solution_count();
     } else {
-        println!("Solving for larger than 10 ahsn't been implemented yet");
-        let solution_count = 0;
-        return solution_count;
+        println!("Solving for larger than 10 hasn't been implemented yet");
+        return 0;
     }
 }
 

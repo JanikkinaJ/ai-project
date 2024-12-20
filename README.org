@@ -7,15 +7,6 @@
 *** Requirements
 **** Bewertungskriterien
 Um Ihnen ein besseres Gefühl für den Erwartungshorizont zu geben einmal die Themen, die Sie für die Präsentation/Projekt in EAI im Kopf haben sollten:
-***** Präsentation:
-****** Korrekte wissenschaftliche Vorgehensweise
-(Quellenangaben zu den wichtigsten Stellen, Grundlegend verwendete Literatur aufgezeigt, Wenn Einsatz KI: Zitiert)
-****** Überblick Thema
-(Angemessener Überblick über das Thema [und seine Teildisziplinen])
-Inhaltliche Tiefe
-(Komplexität und inhaltlicher Umfang der Inhalte angemessen)
-****** Roter Faden
-(Inhalte aufeinander aufbauend und zusammenhängend, Konzepte erklärt, Struktur erkennbar)
 *****  Projekt:
 ****** Korrekte wissenschaftliche Vorgehensweise
 (Grundlegend verwendete Literatur aufgezeigt, Wenn Einsatz KI: Zitiert)
@@ -288,42 +279,63 @@ prints a nice board layout with queens state
 #+end_src
 **** the main backtrack function
   #+begin_src rust :noweb-ref backtrack
-  /// the backtrack solution for queen 8x8 problem
-  fn backtrack(board: &mut Board, row: usize, solutions: &mut Vec<String>) -> i32 {
-      if row == board.size {
-          solutions.push(board.get_queens().to_string());
-          board.print_board_grid();
-          board.print_queens();
-         return 1
-      }
-      let mut count = 0;
-      for col in 0..board.size as i8  {
-          if board.check_valid(row, col) {
-              board.set(row, col);
-              count = count + backtrack(board, row + 1, solutions);
-              board.unset(row, col);
-          }
-      }
-      return count
-  }
+    struct Solver {
+        solution_count: i32,
+    }
+
+
+    impl Solver {
+        /// Constructor to initialize the solver
+        fn new() -> Self {
+            Self {
+                solution_count: 0,
+            }
+        }
+
+        fn get_solution_count(&self) -> i32 {
+            return self.solution_count;
+        }
+
+        fn iterate_solution_count(&mut self) {
+            self.solution_count += 1;
+        }
+
+        /// the backtrack solution for queen 8x8 problem
+        fn backtrack(&mut self, board: &mut Board, row: usize) {
+            if row == board.size {
+                board.print_board_grid();
+                board.print_queens();
+                self.iterate_solution_count();
+                return
+            }
+            for col in 0..board.size as i8  {
+                if board.check_valid(row, col) {
+                    board.set(row, col);
+                    self.backtrack(board, row + 1);
+                    board.unset(row, col);
+                }
+            }
+            return
+        }
+    }
+
+
+    /// solve 8x8 queens
+    pub fn solve_n_queens(n: usize) -> i32 {
+        let mut board = Board::new(n);
+        let mut solver = Solver::new();
+            if n <= 10 {
+                solver.backtrack(&mut board, 0);
+                println!("Solved {n}x{n} Queens problem with {} solutions!", solver.get_solution_count());
+                return solver.get_solution_count();
+            } else {
+                println!("Solving for larger than 10 hasn't been implemented yet");
+                return 0;
+            }
+    }
 #+end_src
 
 #+begin_src rust :noweb-ref solve_n_queens
-  /// solve 8x8 queens
-  fn solve_n_queens(n: usize) -> i32 {
-      let mut board = Board::new(n);
-      let mut solutions: Vec<String> = Vec::new();
-      if n <= 10 {
-          let solution_count = backtrack(&mut board, 0, &mut solutions);
-          println!("Solved {n}x{n} Queens problem with {solution_count} solutions!");
-          return solution_count;
-      } else {
-          println!("Solving for larger than 10 ahsn't been implemented yet");
-          let solution_count = 0;
-          return solution_count;
-      }
-  }
-
   fn main() -> Result<(), String> {
       solve_n_queens(8);
       Ok(())
@@ -431,6 +443,7 @@ prints a nice board layout with queens state
 #+begin_src rust
   }
 #+end_src
+
 **** Tangle-Only Block: Final Code                              :noexport:
 # #+begin_src rust :noweb yes :tangle ~/projects/leibniz/eight_queens/src/main.rs
 #   <<struct_board>>
