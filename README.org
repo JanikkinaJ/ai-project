@@ -1,5 +1,5 @@
 #+PROPERTY: header-args :tangle ~/projects/leibniz/eight_queens/src/main.rs 
-#+title: Eight queens problem
+#+title: Eight queen problem
 #+AUTHOR: Janik kinaj
 #+CITE_EXPORT: biblatex
 #+LATEX_HEADER: \usepackage[sorting=none]{biblatex}
