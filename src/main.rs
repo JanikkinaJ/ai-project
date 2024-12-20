@@ -130,9 +130,8 @@ impl Board {
 }
 
 /// the backtrack solution for queen 8x8 problem
-fn backtrack(board: &mut Board, row: usize, solutions: &mut Vec<String>) -> i32 {
+fn backtrack(board: &mut Board, row: usize) -> i32 {
     if row == board.size {
-        solutions.push(board.get_queens().to_string());
         board.print_board_grid();
         board.print_queens();
         return 1
@@ -141,7 +140,7 @@ fn backtrack(board: &mut Board, row: usize, solutions: &mut Vec<String>) -> i32 
     for col in 0..board.size as i8  {
         if board.check_valid(row, col) {
             board.set(row, col);
-            count = count + backtrack(board, row + 1, solutions);
+            count = count + backtrack(board, row + 1);
             board.unset(row, col);
         }
     }
@@ -151,9 +150,8 @@ fn backtrack(board: &mut Board, row: usize, solutions: &mut Vec<String>) -> i32 
 /// solve 8x8 queens
 fn solve_n_queens(n: usize) -> i32 {
     let mut board = Board::new(n);
-    let mut solutions: Vec<String> = Vec::new();
     if n <= 10 {
-        let solution_count = backtrack(&mut board, 0, &mut solutions);
+        let solution_count = backtrack(&mut board, 0);
         println!("Solved {n}x{n} Queens problem with {solution_count} solutions!");
         return solution_count;
     } else {
