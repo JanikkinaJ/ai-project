@@ -444,6 +444,10 @@ Some tests that were implemented that check that functions work the way they are
       assert_eq!(board.get(7), Some(3));
   }
 #+end_src
+
+* Project auch auf github auffindbar
+[[https://github.com/JanikkinaJ/ai-project][Link to personal github repo]]
+
 #+LATEX: \nocite{2022constraintsatisfactionproblem, 2024constraintsatisfactionproblem, toussaint2019artificialintelligenceconstraint, 2024constraintsatisfactionproblems}
 #+print_bibliography:
 
