@@ -169,7 +169,6 @@ impl Solver {
     }
 }
 
-
 /// solve 8x8 queens
 pub fn solve_n_queens(n: usize) -> i32 {
     let mut board = Board::new(n);

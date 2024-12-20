@@ -1,96 +1,87 @@
 #+PROPERTY: header-args :tangle ~/projects/leibniz/eight_queens/src/main.rs 
-#+title: Eight queens
-** Tags:                                                       :leibniz:
-
-* AI project - Solve 8 queens problem 8x8
-** Structured
-*** Requirements
-**** Bewertungskriterien
-Um Ihnen ein besseres Gefühl für den Erwartungshorizont zu geben einmal die Themen, die Sie für die Präsentation/Projekt in EAI im Kopf haben sollten:
-*****  Projekt:
-****** Korrekte wissenschaftliche Vorgehensweise
-(Grundlegend verwendete Literatur aufgezeigt, Wenn Einsatz KI: Zitiert)
-****** Überblick Problemstellung & Beantwortung Fragen
-(Grundlegender Überblick über Problemstellung und Vorgehensweise, beantwortung vorher festgelegter Fragen)
-Dokumentation
-(Wichtigste Stellen kommentiert, Code/Lösungsstrategie nachvollziehbar[roter Faden], Klassendiagramm oder Programmablaufplan vorhanden)
-****** Code
-(Das Programm funktioniert und löst das definierte Problem, Bugs (falls vorhanden aufgezeigt)
-Viel Erfolg in der Prüfungsphase & denken Sie daran, dass Sie nur bis zum 20.12 abgeben können!
-
-**** Specific questions
-- Verwenden eines CSPs
-  - Column constraint: Each queen is placed in a unique column, meaning no two queens can share the same column.
-  - Row constraint: Similarly, each queen is placed in a unique row. In most CSP formulations of the 8-queens problem, this is implicitly satisfied by assigning each queen to a specific row.
-  - Diagonal constraints: No two queens can be on the same diagonal. This means that for any two queens at positions $(r_1, c_1)$ and $(r_2, c_2)$
-    - They cannot satisfy $r_2 - r_1 = c_2 - c_1$ (same "positive slope" diagonal).
-    - They cannot satisfy $r_2 - r_1 = -(c_2 - c_1)$ (same "negative slope" diagonal).
-- Wie wird das CSP modelliert
-  - A set of variables $\{x_1, x_2, x_3,...,x_2\}$
-    - Variables: $\{Q_i | 1\leq i \leq 8\}$
-  - for each variable $x_i$ there is a domain $D_i$ of values that can be assigned to $x_i$
-    - for each $i \{1 - 8\}$
-  - a set of constraints $\{c_1,c_2,c_3,...,c_n\}$
-    - $\{Q_i\neq Q_j \text{ if } i \neq j\} \rightarrow$ not the same row
-    - $\{\middle Q_i -Q_j\middle \neq \middle i-j \middle \text{ if } i \neq j\} \rightarrow$ not the same diagonal
-- Wie wird ein State modelliert
-  - Der State beschreibt, welche Werte den Variablen zugewiesen wurden.
-  - Beispielsweise: $Q_1 = 1, Q_2 = 3$ bedeutet, dass die erste Dame in der ersten Zeile, erste Spalte, und die zweite Dame in der zweiten Zeile, dritte Spalte steht.
-  - sonst auch ~state space tree~
-- was gibt das Programm im Erfolgs/Fehlerfall aus
-- welche heuristische funktionen werden verwendet?
-  - Minimum Remaining Values(MRV):
-    - Use the variable with the least amount of values left
-  - Most constraining variable(MCV)
-    - Which variable is used in the most amount of constraints
-  - Least constraining value(LCV)
-    - Prioritize the value selection based on their accumalated effect on all domains
-
-*** Implementation
+#+title: Eight queens problem
+#+AUTHOR: Janik kinaj
+#+CITE_EXPORT: biblatex
+#+LATEX_HEADER: \usepackage[sorting=none]{biblatex}
 #+SETUPFILE: ~/Sync/setup.org
 #+LATEX_HEADER: \lhead{Rust 8 Queen Problem}
 #+LATEX_HEADER: \cfoot{By: Janik kinaj}
 #+LATEX: \newpage
-**** Planning
-The plan is to create an algorithm that solves the 8x8 queen problem in a reasonable time.
-To solve in this case means to output all possible valid solutions. To create a better algorithm there are certain design decisions that have been made.
-
-***** links
-- [[https://www.geeksforgeeks.org/constraint-satisfaction-problems-csp-in-artificial-intelligence/][geeksforgeeks explanation]]
-- [[https://en.wikipedia.org/wiki/Constraint_satisfaction_problem][csp wiki eng]]
-- [[https://de.wikipedia.org/wiki/Constraint-Satisfaction-Problem][csp wiki deutsch]]
-- [[https://www.user.tu-berlin.de/mtoussai/teaching/19-ArtificialIntelligence/08-CSP.pdf][tu-berlin pdf]]
-- [[https://medium.com/@davidlfliang/intro-python-algorithms-eight-queens-problem-fdcc5cf384d5][medium 8x8]]
-- [cite:@martinjak2007comparisonheuristicalgorithms]
-**** Structure
-#+begin_box
-
-The actual structure consists of the size saved as an int and a board saved as a vector of ~N~ length.
-Each Index of the vector represents a row and the value the column that a queen of that row sits on. The vector has a ~value~ or ~None~ at each point representing the column that that queen is in or that no queen has been placed there yet.
-
-#+begin_src mermaid :file board_state_diagram.png :exports results :tangle no 
+* Introduction
+** Grundlegende problemstellung
+Das 8 Queen problem besteht aus einem 8x8 Schachbrett. Bei den queen Problemen ist die Grö\ss e des Boards nxn wenn die Anzahl der zu platzierende Queens n ist. Um das problem zu lösen muss man entweder eine oder alle mögliche lösungen finden. Eine lösung ist valide wenn 8 queens auf Board sind und keine der queens direct eine andere angreifen kann.
+In diesem fall werden alle mögliche Lösungen gesucht.
+** Constraint satisfaction
+- Reiheneinschränkung: Jede Dame wird in einer eindeutigen Reihe platziert, was bedeutet, dass keine zwei Damen dieselbe Spalte teilen können.  
+- Spalteneinschränkung: Jede Dame wird in einer eindeutigen Spalte platziert. Diese Einschränkung wird durch eine Funktion erfüllt, die jede Reihe auf eine passende Spaltennummer überprüft.
+- Diagonaleinschränkungen: Keine zwei Damen dürfen sich auf derselben Diagonalen befinden. Das bedeutet, dass für zwei Damen an den Positionen $(r_1, c_1)$ und $(r_2, c_2)$ gilt:
+  - Sie dürfen nicht die Bedingung $r_2 - r_1 = c_2 - c_1$ erfüllen (gleiche Diagonale mit "positiver Steigung").
+  - Sie dürfen nicht die Bedingung $r_2 - r_1 = -(c_2 - c_1)$ erfüllen (gleiche Diagonale mit "negativer Steigung").
+** Wie wird es modelliert
+- Die state des Boards wird anhand von der Board class dargestellt.
+- Diese stellt den State der Queens auf dem Board anhand von einem Vector da.
+  - Beispielsweise: $Q_1 = 1, Q_2 = 3$ bedeutet, dass die erste Dame in der ersten Zeile, erste Spalte, und die zweite Dame in der zweiten Zeile, dritte Spalte steht.
+- die Constraints stellen sicher, dass keine zwei Damen dieselbe Spalte oder Diagonale teilen.
+- Au\ss erdem wird der state des solvers anhand der solution count dargestellt.
+#+begin_src mermaid :file board_state_diagram.png :exports results :tangle no
 classDiagram
     class Board {
-        + usize size
-        + Vec&lt;Option&lt;i8&gt;&gt; board
-        + new(size: usize): Self
-        + get(row: usize): Option<i8>
-        + set(row: usize, column: i8): bool
-        + unset(row: usize, column: i8): bool
-        + check_valid(row: usize, column: i8): bool
-        + backtrack(row: usize, solutions): i32
-        + solve_n_queens(n: usize): i32
-        + print_board_grid(): void
+        - size: usize
+        - board: Vec&lt;Option&lt;i8&gt;&gt;
+        + new(size: usize) Self
+        + get(row: usize) Option&lt;i8&gt;
+        + check_valid(row: usize, column: i8) bool
+        + set(row: usize, column: i8) bool
+        + unset(row: usize, column: i8) bool
+        + get_queens() String
+        + print_board_grid()
     }
-#+end_src
 
-#+attr_latex: :width 200px
+    class Solver {
+        - solution_count: i32
+        + new() Self
+        + get_solution_count() i32
+        + iterate_solution_count()
+        + backtrack(board: &mut Board, row: usize)
+    }
+
+    class solve_n_queens {
+        + solve_n_queens(n: usize) i32
+    }
+
+    Board <-- Solver : Solves
+    solve_n_queens ..> Solver : "Creates"
+    solve_n_queens ..> Board : "Creates"
+#+end_src
+#+attr_latex: :width 300px
 #+RESULTS:
 [[file:board_state_diagram.png]]
+
+** was gibt das Programm im Erfolgs/Fehlerfall aus
+In einem Erfolgsfall werden all mögliche lösung ausgegeben und auch die Anzahl and gefundene lösungen. In einem Fehlerfall (Z.b wenn eine nicht implementierte anzahl von queens dem solver gegeben werden kommt eine Fehlermeldung die dies sagt.
+#+LATEX: \clearpage
+** welche heuristische funktionen werden verwendet?
+  Es gibt mehrere bekannte heuristische Funktionen die anwendbar sind. Diese Funktionen würden aber nur für die findung einer einzelne lösung nutzlich sein oder für eine größeres n Queen Problem, da diese uns helfen würden die einfachste lösung zu finden indem wir Z.b. nur die Queens mit den wenigsten constraints setzen. Wir wollen aber alle lösung finden also wurden sie hier nicht angewandt.[cite:@martinjak2007comparisonheuristicalgorithms]
+  Mögliche Heuristische Funktionen:
+#+begin_box
+- Minimum Remaining Values(MRV):
+  - Use the variable with the least amount of values left
+- Most constraining variable(MCV)
+  - Which variable is used in the most amount of constraints
+- Least constraining value(LCV)
+  - Prioritize the value selection based on their accumalated effect on all domains
+- Simulated Annealing
+- Tabu search
+- Genetic algorithms
 #+end_box
+#+LATEX: \clearpage
+* Implementation
+** Structure
 
-
-#+begin_src rust :noweb-ref struct_board 
+#+begin_box
+The actual structure of the board consists of the size saved as an int and a board saved as a vector of ~N~ length. Each Index of the vector represents a row and the value the column that a queen of that row sits on. The vector has a ~value~ or ~None~ at each point representing the column that that queen is in or that no queen has been placed there yet.
+#+end_box
+#+begin_src rust 
   #[derive(Debug)]
   struct Board {
       size: usize,
@@ -98,7 +89,7 @@ classDiagram
   }
 #+end_src
 
-#+begin_src rust :noweb-ref impl_board
+#+begin_src rust 
   impl Board {
       /// Constructor to initialize the board
       fn new(size: usize) -> Self {
@@ -108,7 +99,8 @@ classDiagram
           }
       }
 #+end_src
-**** getter 
+
+** getter 
 #+begin_box
 the getter used to retrieve the column value of a queen after providing the queens row
 #+end_box
@@ -123,27 +115,30 @@ the getter used to retrieve the column value of a queen after providing the quee
   }
 #+end_src
 
-**** check validity
-***** row constraint
-By assigning a specific queen to a specific row we reduce the amount of possibilities and also make the solution adhere to the row constraint.
-This has already been ensured by our model for queens getting their row via their placement in the Vector.
-***** Diagonal constraint
-It needs to be checked whether queens are diagonal from one another. This is a possible implementation.
+** Constraints
+*** row and column constraint
+Two queens on the same row would cause them to attack eachother, we have implemented via the structure the constraint that only one queen can exist per row. As the Vector we use to model the queen placement can only have one number per index.
 #+begin_box
-given a coord use diagonal function to check that no other queens are on the diagonal
+Jede Reihe auf eine passende Spaltennummer überprüft, wenn eine gefunden wird ist ein conflict vorhanden.
 #+end_box
-#+begin_src rust :noweb-ref check_all_diagonal
-   /// checks for column conflicts
-    fn check_column(&self, column: i8) -> bool {
-        !self.board.iter().any(|&col| col == Some(column))
-    }
 
+#+begin_src rust
+  /// checks for column conflicts
+   fn check_column(&self, column: i8) -> bool {
+       !self.board.iter().any(|&col| col == Some(column))
+   }
+#+end_src
+*** Diagonal constraint
+#+begin_box
+It needs to be checked whether queens are diagonal from one another.
+Given a coord this uses the diagonal function to check that no other queens are on the diagonal.
+#+end_box
+#+begin_src rust 
     /// returns true if diagonal is fine
     fn check_diagonal(&self, row_one: usize, col_one: i8, row_two: usize, col_two: i8) -> bool {
         // Calculate differences
         let col_diff = (col_one - col_two).abs();
         let row_diff = (row_one as i8 - row_two as i8).abs();
-        //println!("row and col diff: {row_diff} == {col_diff}");
         !(row_diff == col_diff) // Return whether the diagonal placement is valid
     }
 
@@ -159,14 +154,12 @@ given a coord use diagonal function to check that no other queens are on the dia
         return true;
     }
 #+end_src
-***** Check constraints 
-As two queens on the same column would cause them to attack eachother this is a constraint we add.
-We check this constraint by checking whether another queen already has the same column before assigning.
+*** Check constraints 
 #+begin_box
 combines all above checks into one function for ease of use and additionally checks that given column doesn't conflict with any other queens.
 #+end_box
 
-#+begin_src rust :noweb-ref check_valid
+#+begin_src rust 
   /// uses all checks to check if coordinate is valid
   fn check_valid(&self, row :usize,column: i8) -> bool {
       if !(self.check_column(column)) {
@@ -179,11 +172,11 @@ combines all above checks into one function for ease of use and additionally che
       return true;
   }
 #+end_src
-**** setters
+** setters
 #+begin_box
 Set a queen, checking whether the position is a valid queen placement first
 #+end_box
-#+begin_src rust :noweb-ref set
+#+begin_src rust 
   
   /// Setter to place a queen at a specific column and row
   fn set(&mut self, row: usize, column: i8) -> bool {
@@ -200,7 +193,7 @@ Set a queen, checking whether the position is a valid queen placement first
 #+begin_box
 Unset a queen, only checking whether the position exists on the board
 #+end_box
-#+begin_src rust :noweb-ref unset
+#+begin_src rust
   /// unsetter to remove a queen at a specific column and row
   fn unset(&mut self, row: usize, column: i8) -> bool {
       if !(row < self.size && column >= 0 && column < self.size as i8) {
@@ -212,12 +205,12 @@ Unset a queen, only checking whether the position exists on the board
       }
   }
 #+end_src
-
-**** printing state
+#+LATEX: \clearpage
+** printing state
 #+begin_box
 returns string with all queens nicely formatted
 #+end_box
-#+begin_src rust :noweb-ref get_queens
+#+begin_src rust 
   /// Get state of all queens via a string
   fn get_queens(&self) -> String {
       let queens: Vec<String> = self
@@ -233,7 +226,7 @@ returns string with all queens nicely formatted
 #+begin_box
 print the queens string
 #+end_box
-#+begin_src rust :noweb-ref print_queens
+#+begin_src rust 
   /// print queens state to terminal
   fn print_queens(&self) {
       println!("{}", self.get_queens());
@@ -243,7 +236,7 @@ print the queens string
 #+begin_box
 prints a nice board layout with queens state
 #+end_box
-#+begin_src rust :noweb-ref print_board
+#+begin_src rust 
   /// nicer printing of current queen state
   fn print_board_grid(&self) {
       print!("===");
@@ -273,12 +266,19 @@ prints a nice board layout with queens state
   }
 #+end_src
 
-**** end board class                                            :noexport:
+** end board class                                                 :noexport:
 #+begin_src rust
   }
 #+end_src
-**** the main backtrack function
-  #+begin_src rust :noweb-ref backtrack
+#+LATEX: \clearpage
+** Implementing the solver
+Most of the work is already done as I can already check for validity and the board has already been modelled with the Board struct.
+This implements the backtracking solution which finds all possible solutions by repeatedly backtracking till all solutions have been found.
+#+begin_box
+This could be improved in the future possibly by only finding unique solutions.
+This would reduce the solutions for the 8 queen problem from 92 to 12 by comparing solutions by rotating and mirroring.
+#+end_box
+  #+begin_src rust 
     struct Solver {
         solution_count: i32,
     }
@@ -291,11 +291,9 @@ prints a nice board layout with queens state
                 solution_count: 0,
             }
         }
-
         fn get_solution_count(&self) -> i32 {
             return self.solution_count;
         }
-
         fn iterate_solution_count(&mut self) {
             self.solution_count += 1;
         }
@@ -318,38 +316,45 @@ prints a nice board layout with queens state
             return
         }
     }
-
-
-    /// solve 8x8 queens
-    pub fn solve_n_queens(n: usize) -> i32 {
-        let mut board = Board::new(n);
-        let mut solver = Solver::new();
-            if n <= 10 {
-                solver.backtrack(&mut board, 0);
-                println!("Solved {n}x{n} Queens problem with {} solutions!", solver.get_solution_count());
-                return solver.get_solution_count();
-            } else {
-                println!("Solving for larger than 10 hasn't been implemented yet");
-                return 0;
-            }
-    }
+#+end_src
+#+LATEX: \clearpage
+#+begin_box
+This function is just implemented for ease of use. It sets up the board and the solver with the right size and lets you decide what size of queen problem you want to solve.
+#+end_box
+#+begin_src rust
+  /// solve 8x8 queens
+  pub fn solve_n_queens(n: usize) -> i32 {
+      let mut board = Board::new(n);
+      let mut solver = Solver::new();
+      if n <= 10 && n > 0 {
+          solver.backtrack(&mut board, 0);
+          println!("Solved {n}x{n} Queens problem with {} solutions!", solver.get_solution_count());
+          return solver.get_solution_count();
+      } else if n < 1{
+          println!("Can't solve queen problem for a board that doesn't exist")
+      } else {
+          println!("Solving for larger than 10 hasn't been implemented yet");
+          return 0;
+      }
+  }
 #+end_src
 
-#+begin_src rust :noweb-ref solve_n_queens
+#+begin_src rust 
   fn main() -> Result<(), String> {
       solve_n_queens(8);
       Ok(())
   }
 #+end_src
-**** Inbetween hidden                                           :noexport:
+** Inbetween hidden                                                :noexport:
 #+begin_src rust
     #[cfg(test)]
     mod tests {
         use super::*;
 #+end_src
 
-**** tests
-#+begin_src rust :noweb-ref test_create_queen
+** tests
+Some tests that were implemented that check that functions work the way they are intended to.
+#+begin_src rust 
    #[test]
   fn create_queen() {
       let mut board =  Board::new(8);
@@ -358,7 +363,7 @@ prints a nice board layout with queens state
   }
 #+end_src
 
-#+begin_src rust :noweb-ref test_diagonal_found
+#+begin_src rust 
   #[test]
   fn diagonal_found() {
       let mut board =  Board::new(8);
@@ -369,7 +374,7 @@ prints a nice board layout with queens state
   }
 #+end_src
 
-#+begin_src rust :noweb-ref test_conflicting_column_found
+#+begin_src rust 
   #[test]
   fn conflicting_column_found() {
       let mut board =  Board::new(8);
@@ -380,7 +385,7 @@ prints a nice board layout with queens state
   }
 #+end_src
 
-#+begin_src rust :noweb-ref test_too_big
+#+begin_src rust 
   #[test]
   fn too_big() {
       let board =  Board::new(8);
@@ -395,7 +400,7 @@ prints a nice board layout with queens state
   }
 #+end_src
 
-#+begin_src rust :noweb-ref test_too_small
+#+begin_src rust 
   #[test]
   fn too_small() {
       let board =  Board::new(8);
@@ -406,7 +411,7 @@ prints a nice board layout with queens state
   }
 #+end_src
 
-#+begin_src rust :noweb-ref test_output
+#+begin_src rust 
   #[test]
   fn output_test() {
       let mut board =  Board::new(8);
@@ -439,35 +444,11 @@ prints a nice board layout with queens state
       assert_eq!(board.get(7), Some(3));
   }
 #+end_src
-**** Tangle only block end                                      :noexport:
+#+LATEX: \nocite{2022constraintsatisfactionproblem, 2024constraintsatisfactionproblem, toussaint2019artificialintelligenceconstraint, 2024constraintsatisfactionproblems}
+#+print_bibliography:
+
+** Tangle only block end                                           :noexport:
 #+begin_src rust
   }
 #+end_src
 
-**** Tangle-Only Block: Final Code                              :noexport:
-# #+begin_src rust :noweb yes :tangle ~/projects/leibniz/eight_queens/src/main.rs
-#   <<struct_board>>
-#   <<impl_board>>
-#   <<get_queens>>
-#   <<print_queens>>
-#   <<print_board>>
-#   <<get>>
-#   <<set>>
-#   <<unset>>
-#   <<check_valid>>
-#   <<check_all_diagonal>>
-
-#       }
-#   <<backtrack>>
-#   <<solve_n_queens>>
-#     #[cfg(test)]
-#     mod tests {
-#         use super::*;
-#   <<test_create_queen>>
-#   <<test_diagonal_found>>
-#   <<test_conflicting_column_found>>
-#   <<test_too_big>>
-#   <<test_too_small>>
-#   <<test_output>>
-#     }
-# #+end_src
