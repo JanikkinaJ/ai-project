@@ -3,6 +3,7 @@ struct Board {
     size: usize,
     board: Vec<Option<i8>>, // Each row points to a column (None if no queen is present)
 }
+
 impl Board {
     /// Constructor to initialize the board
     fn new(size: usize) -> Self {
@@ -11,6 +12,76 @@ impl Board {
             board: vec![None; size],
         }
     }
+
+    /// Getter for column of queen in provided row
+    fn get(&self, row: usize) -> Option<i8> {
+        if row < self.size  {
+            self.board[row]
+        } else {
+            None
+        }
+    }
+
+    /// checks for column conflicts
+    fn check_column(&self, column: i8) -> bool {
+        !self.board.iter().any(|&col| col == Some(column))
+    }
+
+    /// returns true if diagonal is fine
+    fn check_diagonal(&self, row_one: usize, col_one: i8, row_two: usize, col_two: i8) -> bool {
+        // Calculate differences
+        let col_diff = (col_one - col_two).abs();
+        let row_diff = (row_one as i8 - row_two as i8).abs();
+        //println!("row and col diff: {row_diff} == {col_diff}");
+        !(row_diff == col_diff) // Return whether the diagonal placement is valid
+    }
+
+    /// returns true if all queen diagonals don't conflict with coord
+    fn check_all_diagonal(&self, row: usize, col: i8) -> bool {
+        for q_row in 0..(self.size-1) {
+            if let Some(q_col) = self.get(q_row) {//handles the case where q_col is None
+                if !self.check_diagonal(row, col, q_row, q_col) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /// uses all checks to check if coordinate is valid
+    fn check_valid(&self, row :usize,column: i8) -> bool {
+        if !(self.check_column(column)) {
+            return false;
+        } else if !(row < self.size && column >= 0 && column < self.size as i8) {
+            return false;
+        } else if !self.check_all_diagonal(row, column) {
+            return false;
+        }
+        return true;
+    }
+
+    /// Setter to place a queen at a specific column and row
+    fn set(&mut self, row: usize, column: i8) -> bool {
+        if self.check_valid(row, column) {
+            self.board[row] = Some(column);
+            return true;
+        } else {
+            println!("Invalid Queen position: column={}, row={}. Board size is {}.",column, row, self.size);
+            return false;
+        }
+    }
+
+    /// unsetter to remove a queen at a specific column and row
+    fn unset(&mut self, row: usize, column: i8) -> bool {
+        if !(row < self.size && column >= 0 && column < self.size as i8) {
+            println!("Invalid position: row={}, column={}. Board size is {}.",row, column, self.size);
+            return false;
+        } else {
+            self.board[row] = None;
+            return true
+        }
+    }
+
     /// Get state of all queens via a string
     fn get_queens(&self) -> String {
         let queens: Vec<String> = self
@@ -22,10 +93,12 @@ impl Board {
             .collect();
         format!("Queens: [{}]", queens.join(", "))
     }
+
     /// print queens state to terminal
     fn print_queens(&self) {
         println!("{}", self.get_queens());
     }
+
     /// nicer printing of current queen state
     fn print_board_grid(&self) {
         print!("===");
@@ -53,73 +126,9 @@ impl Board {
         }
         println!("===");
     }
-    /// Getter for column of queen in provided row
-    fn get(&self, row: usize) -> Option<i8> {
-        if row < self.size  {
-            self.board[row]
-        } else {
-            None
-        }
-    }
-
-    /// Setter to place a queen at a specific column and row
-    fn set(&mut self, row: usize, column: i8) -> bool {
-        if self.check_valid(row, column) {
-            self.board[row] = Some(column);
-            return true;
-        } else {
-            println!("Invalid Queen position: column={}, row={}. Board size is {}.",column, row, self.size);
-            return false;
-        }
-    }
-    /// unsetter to remove a queen at a specific column and row
-    fn unset(&mut self, row: usize, column: i8) -> bool {
-        if !(row < self.size && column >= 0 && column < self.size as i8) {
-            println!("Invalid position: row={}, column={}. Board size is {}.",row, column, self.size);
-            return false;
-        } else {
-            self.board[row] = None;
-            return true
-        }
-    }
-    /// uses all checks to check if coordinate is valid
-    fn check_valid(&self, row :usize,column: i8) -> bool {
-        if !(self.check_column(column)) {
-            return false;
-        } else if !(row < self.size && column >= 0 && column < self.size as i8) {
-            return false;
-        } else if !self.check_all_diagonal(row, column) {
-            return false;
-        }
-        return true;
-    }
-    /// checks for column conflicts
-    fn check_column(&self, column: i8) -> bool {
-        !self.board.iter().any(|&col| col == Some(column))
-    }
-
-    /// returns true if diagonal is fine
-    fn check_diagonal(&self, row_one: usize, col_one: i8, row_two: usize, col_two: i8) -> bool {
-        // Calculate differences
-        let col_diff = (col_one - col_two).abs();
-        let row_diff = (row_one as i8 - row_two as i8).abs();
-        //println!("row and col diff: {row_diff} == {col_diff}");
-        !(row_diff == col_diff) // Return whether the diagonal placement is valid
-    }
-
-    /// returns true if all queen diagonals don't conflict with coord
-    fn check_all_diagonal(&self, row: usize, col: i8) -> bool {
-        for q_row in 0..(self.size-1) {
-            if let Some(q_col) = self.get(q_row) {//handles the case where q_col is None
-                if !self.check_diagonal(row, col, q_row, q_col) {
-                    return false;
-                }
-            }
-        }
-        return true;
-    }
 
 }
+
 /// the backtrack solution for queen 8x8 problem
 fn backtrack(board: &mut Board, row: usize, solutions: &mut Vec<String>) -> i32 {
     if row == board.size {
@@ -138,6 +147,7 @@ fn backtrack(board: &mut Board, row: usize, solutions: &mut Vec<String>) -> i32 
     }
     return count
 }
+
 /// solve 8x8 queens
 fn solve_n_queens(n: usize) -> i32 {
     let mut board = Board::new(n);
@@ -157,15 +167,18 @@ fn main() -> Result<(), String> {
     solve_n_queens(8);
     Ok(())
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
     fn create_queen() {
         let mut board =  Board::new(8);
         let create = board.set(0, 0);
         assert_eq!(create, true);
     }
+
     #[test]
     fn diagonal_found() {
         let mut board =  Board::new(8);
@@ -174,6 +187,7 @@ mod tests {
         assert_eq!(bad_coord, false);
         assert_eq!(board.check_diagonal(0,0, 1,1), false);
     }
+
     #[test]
     fn conflicting_column_found() {
         let mut board =  Board::new(8);
@@ -182,6 +196,7 @@ mod tests {
         assert_eq!(board.check_column(2),false);
         assert_eq!(board.check_column(3),true);
     }
+
     #[test]
     fn too_big() {
         let board =  Board::new(8);
@@ -194,6 +209,7 @@ mod tests {
         assert_eq!(way_too_big, false);
         assert_eq!(okay_size,true);
     }
+
     #[test]
     fn too_small() {
         let board =  Board::new(8);
@@ -202,6 +218,7 @@ mod tests {
         assert_eq!(too_small, false);
         assert_eq!(way_too_small, false);
     }
+
     #[test]
     fn output_test() {
         let mut board =  Board::new(8);
@@ -233,4 +250,5 @@ mod tests {
         assert_eq!(board.get(6), Some(1));
         assert_eq!(board.get(7), Some(3));
     }
+
 }
