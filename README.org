@@ -10,12 +10,12 @@
 * Introduction
 ** Running the Project with Cargo
 1. Navigate to the project directory:
-#+BEGIN_SRC bash
+#+BEGIN_SRC bash :tangle no
    cd ai_project
 #+END_SRC
 
 2. Run the project:
-#+BEGIN_SRC bash
+#+BEGIN_SRC bash :tangle no
    cargo run --release
 #+END_SRC
 This will compile and run the `src/main.rs` file.
