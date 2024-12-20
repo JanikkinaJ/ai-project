@@ -68,13 +68,12 @@ classDiagram
     solve_n_queens ..> Solver : "Creates"
     solve_n_queens ..> Board : "Creates"
 #+end_src
-#+attr_latex: :width 300px
+#+attr_latex: :width 250px
 #+RESULTS:
 [[file:board_state_diagram.png]]
 
 ** was gibt das Programm im Erfolgs/Fehlerfall aus
 In einem Erfolgsfall werden all mögliche lösung ausgegeben und auch die Anzahl and gefundene lösungen. In einem Fehlerfall (Z.b wenn eine nicht implementierte anzahl von queens dem solver gegeben werden kommt eine Fehlermeldung die dies sagt.
-#+LATEX: \clearpage
 ** welche heuristische funktionen werden verwendet?
   Es gibt mehrere bekannte heuristische Funktionen die anwendbar sind. Diese Funktionen würden aber nur für die findung einer einzelne lösung nutzlich sein oder für eine größeres n Queen Problem, da diese uns helfen würden die einfachste lösung zu finden indem wir Z.b. nur die Queens mit den wenigsten constraints setzen. Wir wollen aber alle lösung finden also wurden sie hier nicht angewandt.[cite:@martinjak2007comparisonheuristicalgorithms]
   Mögliche Heuristische Funktionen:
