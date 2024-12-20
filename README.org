@@ -56,24 +56,11 @@ Viel Erfolg in der Prüfungsphase & denken Sie daran, dass Sie nur bis zum 20.12
     - Which variable is used in the most amount of constraints
   - Least constraining value(LCV)
     - Prioritize the value selection based on their accumalated effect on all domains
-#+DOWNLOADED: screenshot @ 2024-12-18 13:51:05
-[[file:../images/AI_project_-_Solve_8_queens_problem_8x8/2024-12-18_13-51-05_screenshot.png]]
 
 *** Implementation
 #+SETUPFILE: ~/Sync/setup.org
-#+LATEX_HEADER: \usepackage{fancyhdr}
-#+LATEX_HEADER: \pagestyle{fancy}
 #+LATEX_HEADER: \lhead{Rust 8 Queen Problem}
-#+LATEX_HEADER: \rhead{page \thepage}
 #+LATEX_HEADER: \cfoot{By: Janik kinaj}
-#+LATEX_HEADER: \renewcommand{\headrulewidth}{0.4pt}
-#+LATEX_HEADER: \renewcommand{\footrulewidth}{0.4pt}
-#+LATEX_HEADER: \usepackage{titlesec}
-#+latex_header: \definecolor{darkblue} {HTML}{0000CC}
-#+LATEX_HEADER: \titleformat*{\section}{\Huge\bfseries\color{darkblue}}
-#+LATEX_HEADER: \titleformat*{\subsection}{\LARGE\bfseries\color{darkblue}}
-#+LATEX_HEADER: \titleformat*{\subsubsection}{\large\bfseries\color{darkblue}}
-#+LATEX_HEADER: \thispagestyle{empty}
 #+LATEX: \newpage
 **** Planning
 The plan is to create an algorithm that solves the 8x8 queen problem in a reasonable time.
@@ -88,30 +75,31 @@ To solve in this case means to output all possible valid solutions. To create a 
 - [cite:@martinjak2007comparisonheuristicalgorithms]
 **** Structure
 #+begin_box
-The actual structure consists of the size saved as an int and a board saved as a vector of ~N~ length. Each Index of the vector represents a row and the value the column that a queen of that row sits on. The vector has a ~value~ or ~None~ at each point representing the column that that queen is in or that no queen has been placed there yet.
-#+end_box
 
-#+BEGIN_SRC mermaid :file board_class_diagram.png :exports both
+The actual structure consists of the size saved as an int and a board saved as a vector of ~N~ length.
+Each Index of the vector represents a row and the value the column that a queen of that row sits on. The vector has a ~value~ or ~None~ at each point representing the column that that queen is in or that no queen has been placed there yet.
+
+#+begin_src mermaid :file board_state_diagram.png :exports results
 classDiagram
     class Board {
         + usize size
-        + Vec<Option<i8>> board
-        + new(size: usize) Board
-        + get(row: usize) Option<i8>
-        + set(row: usize, column: i8) bool
-        + unset(row: usize, column: i8) bool
-        + check_column(column: i8) bool
-        + check_diagonal(row1: usize, col1: i8, row2: usize, col2: i8) bool
-        + check_all_diagonal(row: usize, col: i8) bool
-        + check_valid(row: usize, column: i8) bool
-        + get_queens() String
-        + print_queens()
-        + print_board_grid()
+        + Vec&lt;Option&lt;i8&gt;&gt; board
+        + new(size: usize): Self
+        + get(row: usize): Option<i8>
+        + set(row: usize, column: i8): bool
+        + unset(row: usize, column: i8): bool
+        + check_valid(row: usize, column: i8): bool
+        + backtrack(row: usize, solutions): i32
+        + solve_n_queens(n: usize): i32
+        + print_board_grid(): void
     }
-#+END_SRC
+#+end_src
 
+#+attr_latex: :width 200px
 #+RESULTS:
-[[file:board_class_diagram.png]]
+[[file:board_state_diagram.png]]
+#+end_box
+
 
 #+begin_src rust :noweb-ref struct_board 
   #[derive(Debug)]
@@ -131,7 +119,6 @@ classDiagram
           }
       }
 #+end_src
-#+LATEX: \newpage
 **** getter 
 #+begin_box
 the getter used to retrieve the column value of a queen after providing the queens row
@@ -156,19 +143,33 @@ It needs to be checked whether queens are diagonal from one another. This is a p
 #+begin_box
 given a coord use diagonal function to check that no other queens are on the diagonal
 #+end_box
-#+begin_src rust :noweb-ref check_all_daigonal
-  /// returns true if all queen diagonals don't conflict with coord
-  fn check_all_diagonal(&self, row: usize, col: i8) -> bool {
-      for q_row in 0..(self.size-1) {
-          if let Some(q_col) = self.get(q_row) {//handles the case where q_col is None
-              // Calculate differences
-              let col_diff = (col - q_col).abs();
-              let row_diff = (row as i8 - q_row as i8).abs();
-              !(row_diff == col_diff) // Return whether the diagonal placement is valid          }
-      }
-      return true;
-  }
-  #+end_src
+#+begin_src rust :noweb-ref check_all_diagonal
+   /// checks for column conflicts
+    fn check_column(&self, column: i8) -> bool {
+        !self.board.iter().any(|&col| col == Some(column))
+    }
+
+    /// returns true if diagonal is fine
+    fn check_diagonal(&self, row_one: usize, col_one: i8, row_two: usize, col_two: i8) -> bool {
+        // Calculate differences
+        let col_diff = (col_one - col_two).abs();
+        let row_diff = (row_one as i8 - row_two as i8).abs();
+        //println!("row and col diff: {row_diff} == {col_diff}");
+        !(row_diff == col_diff) // Return whether the diagonal placement is valid
+    }
+
+    /// returns true if all queen diagonals don't conflict with coord
+    fn check_all_diagonal(&self, row: usize, col: i8) -> bool {
+        for q_row in 0..(self.size-1) {
+            if let Some(q_col) = self.get(q_row) {//handles the case where q_col is None
+                if !self.check_diagonal(row, col, q_row, q_col) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+#+end_src
 ***** Check constraints 
 As two queens on the same column would cause them to attack eachother this is a constraint we add.
 We check this constraint by checking whether another queen already has the same column before assigning.
@@ -179,7 +180,7 @@ combines all above checks into one function for ease of use and additionally che
 #+begin_src rust :noweb-ref check_valid
   /// uses all checks to check if coordinate is valid
   fn check_valid(&self, row :usize,column: i8) -> bool {
-      if self.board.iter().any(|&col| col == Some(column)) {
+      if !(self.check_column(column)) {
               return false;
       } else if !(row < self.size && column >= 0 && column < self.size as i8) {
               return false;
@@ -282,7 +283,8 @@ prints a nice board layout with queens state
       println!("===");
   }
 #+end_src
-
+#+begin_src rust  
+#+end_src
 **** the main backtrack function
   #+begin_src rust :noweb-ref backtrack
   /// the backtrack solution for queen 8x8 problem
@@ -419,41 +421,28 @@ prints a nice board layout with queens state
 #+end_src
 **** Tangle-Only Block: Final Code                              :noexport:
 #+begin_src rust :noweb yes :tangle ~/projects/leibniz/eight_queens/src/main.rs
-  <<struct_board>> 
-
+  <<struct_board>>
   <<impl_board>>
-
-  <<get>>
-
-  <<check_column>>
-
-  <<check_diagonal>>
-
-  <<check_all_daigonal>>
-
-  <<check_valid>>
-
-  <<set>>
-
-  <<unset>>
-
   <<get_queens>>
-
   <<print_queens>>
-
   <<print_board>>
+  <<get>>
+  <<set>>
+  <<unset>>
+  <<check_valid>>
+  <<check_all_diagonal>>
 
-  }
+      }
   <<backtrack>>
   <<solve_n_queens>>
     #[cfg(test)]
     mod tests {
         use super::*;
-        <<test_create_queen>>
-            <<test_diagonal_found>>
-            <<test_conflicting_column_found>>
-            <<test_too_big>>
-            <<test_too_small>>
-            <<test_output>>
+  <<test_create_queen>>
+  <<test_diagonal_found>>
+  <<test_conflicting_column_found>>
+  <<test_too_big>>
+  <<test_too_small>>
+  <<test_output>>
     }
 #+end_src
