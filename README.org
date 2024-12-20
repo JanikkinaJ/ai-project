@@ -1,7 +1,5 @@
-:PROPERTIES:
-:ID:       e9425c64-42bd-4904-8f34-55cfd5884df1
-:END:
-#+title: Ai projekt
+#+PROPERTY: header-args :tangle ~/projects/leibniz/eight_queens/src/main.rs 
+#+title: Eight queens
 ** Tags:                                                       :leibniz:
 
 * AI project - Solve 8 queens problem 8x8
@@ -79,7 +77,7 @@ To solve in this case means to output all possible valid solutions. To create a 
 The actual structure consists of the size saved as an int and a board saved as a vector of ~N~ length.
 Each Index of the vector represents a row and the value the column that a queen of that row sits on. The vector has a ~value~ or ~None~ at each point representing the column that that queen is in or that no queen has been placed there yet.
 
-#+begin_src mermaid :file board_state_diagram.png :exports results
+#+begin_src mermaid :file board_state_diagram.png :exports results :tangle no 
 classDiagram
     class Board {
         + usize size
@@ -283,7 +281,10 @@ prints a nice board layout with queens state
       println!("===");
   }
 #+end_src
-#+begin_src rust  
+
+**** end board class                                            :noexport:
+#+begin_src rust
+  }
 #+end_src
 **** the main backtrack function
   #+begin_src rust :noweb-ref backtrack
@@ -328,7 +329,14 @@ prints a nice board layout with queens state
       Ok(())
   }
 #+end_src
-**** testing
+**** Inbetween hidden                                           :noexport:
+#+begin_src rust
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+#+end_src
+
+**** tests
 #+begin_src rust :noweb-ref test_create_queen
    #[test]
   fn create_queen() {
@@ -419,30 +427,34 @@ prints a nice board layout with queens state
       assert_eq!(board.get(7), Some(3));
   }
 #+end_src
-**** Tangle-Only Block: Final Code                              :noexport:
-#+begin_src rust :noweb yes :tangle ~/projects/leibniz/eight_queens/src/main.rs
-  <<struct_board>>
-  <<impl_board>>
-  <<get_queens>>
-  <<print_queens>>
-  <<print_board>>
-  <<get>>
-  <<set>>
-  <<unset>>
-  <<check_valid>>
-  <<check_all_diagonal>>
-
-      }
-  <<backtrack>>
-  <<solve_n_queens>>
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-  <<test_create_queen>>
-  <<test_diagonal_found>>
-  <<test_conflicting_column_found>>
-  <<test_too_big>>
-  <<test_too_small>>
-  <<test_output>>
-    }
+**** Tangle only block end                                      :noexport:
+#+begin_src rust
+  }
 #+end_src
+**** Tangle-Only Block: Final Code                              :noexport:
+# #+begin_src rust :noweb yes :tangle ~/projects/leibniz/eight_queens/src/main.rs
+#   <<struct_board>>
+#   <<impl_board>>
+#   <<get_queens>>
+#   <<print_queens>>
+#   <<print_board>>
+#   <<get>>
+#   <<set>>
+#   <<unset>>
+#   <<check_valid>>
+#   <<check_all_diagonal>>
+
+#       }
+#   <<backtrack>>
+#   <<solve_n_queens>>
+#     #[cfg(test)]
+#     mod tests {
+#         use super::*;
+#   <<test_create_queen>>
+#   <<test_diagonal_found>>
+#   <<test_conflicting_column_found>>
+#   <<test_too_big>>
+#   <<test_too_small>>
+#   <<test_output>>
+#     }
+# #+end_src
