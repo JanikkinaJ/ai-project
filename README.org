@@ -1,11 +1,11 @@
 #+PROPERTY: header-args :tangle ~/projects/leibniz/eight_queens/src/main.rs 
 #+title: Eight queen problem
-#+AUTHOR: Janik kinaj
+#+AUTHOR: Janik
 #+CITE_EXPORT: biblatex
 #+LATEX_HEADER: \usepackage[sorting=none]{biblatex}
 #+SETUPFILE: ~/Sync/setup.org
 #+LATEX_HEADER: \lhead{Rust 8 Queen Problem}
-#+LATEX_HEADER: \cfoot{By: Janik kinaj}
+#+LATEX_HEADER: \cfoot{By: Janik}
 #+LATEX: \newpage
 * Introduction
 ** Running code
